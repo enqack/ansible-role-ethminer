@@ -1,0 +1,42 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description=%I ethminer {{ ethminer_version }} daemon
+After=network.target
+
+[Service]
+User=root
+Type=forking
+
+SyslogIdentifier=ethminerd
+
+Environment=GPU_FORCE_64BIT_PTR=0
+Environment=GPU_MAX_HEAP_SIZE=100
+Environment=GPU_USE_SYNC_OBJECTS=1
+Environment=GPU_MAX_ALLOC_PERCENT=100
+Environment=GPU_SINGLE_ALLOC_PERCENT=100
+
+#Environment=WALLET_ADDRESS={{ ethminer_wallet | default(ethminer_default_wallet) }}
+EnvironmentFile=-/etc/ethminerd/environment
+
+#PrivateTmp=true
+#JoinsNamespaceOf=ethminerns.service
+
+#WorkingDirectory={{ ethminer_bindir }}
+
+ExecStart=/usr/bin/tmux new-session -d -s ethminer {{ ethminer_bindir }}/start_%i.sh
+ExecStartPost=/usr/bin/tmux split-window -h -p 50 -t 0 htop
+ExecStartPost=/usr/bin/tmux split-window -v -p 5 -t 1 su -l ethminer
+ExecStop=-/usr/bin/tmux kill-session -t ethminer
+KillMode=none
+
+Restart=always
+RestartSec=10
+#StartLimitInterval=120s
+StartLimitBurst=5
+#TimeoutStopSec=60
+TimeoutStartSec=5
+
+[Install]
+DefaultInstance=nanopool
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+#!/bin/sh
+# {{ ansible_managed }}
+
+exec {{ ethminer_bindir }}/ethminer \
+  -G \
+{% if ethminer_farm_url is defined %}
+  --farm {{ ethminer_farm_url }} \
+{% endif %}
+{% if ethminer_stratum is defined %}
+  --stratum {{ ethminer_stratum }} \
+{% endif %}
+{% if ethminer_stratum_failover is defined %}
+  --stratum-failover {{ ethminer_stratum_failover }} \
+  {% if ethminer_failover_userpass is defined %}
+  --failover-userpass {{ ethminer_failover_userpass }}
+  {% endif %}
+{% endif %}
+  --stratum-protocol {{ ethminer_stratum_protocol | default(0) }} \
+  --userpass {{ ethminer_userpass | default(ethminer_default_wallet) }} \
+  --farm-recheck 200 \
+  --work-timeout {{ ethminer_work_timeout }} 
+
+

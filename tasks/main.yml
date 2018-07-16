@@ -1,0 +1,90 @@
+## TODO ##
+#
+# add install pre-check
+#
+---
+# tasks file for ethminer
+
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+
+- name: "Check installed Ethminer version"
+  shell: "{{ ethminer_bindir }}/ethminer --version"
+  register: ethminer_installed_version
+  ignore_errors: yes
+  failed_when: false
+  changed_when: false
+  check_mode: no
+
+- name: Set fact if requested version of Ethminer is already installed
+  set_fact: ethminer_installed={{ ethminer_installed_version.stdout_lines[0] is defined and ethminer_installed_version.stdout_lines[0] == ethminer_version | string }}
+
+- name: Download Ethminer
+  get_url:
+    url: "{{ ethminer_url }}"
+    dest: "/tmp/{{ ethminer_archive_file }}"
+  when: not ethminer_installed
+
+- name: Create ethminer group
+  group:
+    name: ethminer
+    system: true
+    state: present
+
+- name: Create ethminer user
+  user:
+    name: ethminer
+    group: ethminer
+    state: present
+
+- name: Create install path
+  file:
+    path: "{{ ethminer_bindir }}"
+    state: directory
+    mode: 0755
+
+- name: Extract Ethminer
+  unarchive:
+    src: "/tmp/{{ ethminer_archive_file }}"
+    dest: "{{ ethminer_bindir }}"
+    extra_opts: ['--strip-components=1']
+    copy: false
+    owner: root
+    group: root
+  when: not ethminer_installed
+  notify: [ "restart ethminer" ]
+
+- name: Set user ID bit for ethminer
+  file:
+    path: "{{ ethminer_bindir }}/ethminer"
+    mode: "u+s"
+  notify: [ "restart ethminer" ]
+
+- name: Create Ethminer startup script
+  template:
+    src: start_nanopool.sh.j2
+    dest: "{{ ethminer_bindir }}/start_nanopool.sh"
+    mode: "ug+x"
+  notify: [ "restart ethminer" ]
+
+- name: Create Ethminer startup script
+  template:
+    src: start_nicehash.sh.j2
+    dest: "{{ ethminer_bindir }}/start_nicehash.sh"
+    mode: "ug+x"
+  notify: [ "restart ethminer" ]
+
+- name: Install Ethminer init script
+  template:
+    src: "{{ item.1 }}.j2"
+    dest: "{{ item.0 }}/{{ item.1 }}"
+  with_together:
+    - "{{ ethminer_release_init_path_map[ansible_distribution_release]
+            if (ansible_distribution_release in ethminer_release_init_path_map.keys())
+            else ethminer_release_init_path }}"
+    - "{{ ethminer_release_service_file_map[ansible_distribution_release]
+            if (ansible_distribution_release in ethminer_release_service_file_map.keys())
+            else ethminer_release_service_file }}"
+  notify: [ "reload systemd", "enable ethminer", "restart ethminer" ]

@@ -1,0 +1,17 @@
+# {{ ansible_managed }}
+
+description "ethminer {{ ethminer_version }}"
+
+start on runlevel [2345]
+stop on shutdown
+
+respawn
+respawn limit 10 5
+
+setuid ethminer
+
+script
+  exec /usr/bin/tmux new-session -d -s ethm {{ ethminer_bindir }}/start_%i.sh
+  /usr/bin/tmux split-window -h -p 50 -t 0 htop
+  /usr/bin/tmux split-window -v -p 5 -t 1 su -l ethminer
+end script

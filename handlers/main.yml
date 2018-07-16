@@ -1,0 +1,34 @@
+---
+# handlers file for ethminer
+
+- name: reload systemd
+  command: systemctl daemon-reload
+
+- name: enable ethminer
+  service:
+    name: "{{ item }}"
+    enabled: "{{ 'true' if ethminer_service_state in ['present', 'enabled'] else 'false' }}"
+  with_items:
+    - "{{ ethminer_release_service_file_map[ansible_distribution_release]
+            if (ansible_distribution_release in ethminer_release_service_file_map.keys())
+            else ethminer_release_service_file }}"
+
+- name: restart ethminer
+  service:
+    name: "{{ item }}"
+    state: "{{ 'restarted' if ethminer_service_state in ['present', 'enabled', 'started', 'restarted'] else 'stopped' }}"
+  with_items:
+    - "{{ ethminer_release_service_file_map[ansible_distribution_release]
+            if (ansible_distribution_release in ethminer_release_service_file_map.keys())
+            else ethminer_release_service_file }}" 
+
+- name: restart ethminer ignore errors
+  service:
+    name: "{{ item }}"
+    state: "{{ 'restarted' if ethminer_service_state in ['present', 'enabled', 'started', 'restarted'] else 'stopped' }}"
+  with_items:
+    - "{{ ethminer_release_service_file_map[ansible_distribution_release]
+            if (ansible_distribution_release in ethminer_release_service_file_map.keys())
+            else ethminer_release_service_file }}"
+  ignore_errors: yes 
+  

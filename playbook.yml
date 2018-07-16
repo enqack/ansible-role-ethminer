@@ -1,0 +1,27 @@
+## ethminer args: https://github.com/ethereum-mining/ethminer/blob/master/ethminer/MinerAux.h
+---
+- name: Manage ethminer worker
+  hosts: ethminer_workers
+  become: yes
+
+  vars:
+    ethminer_stratum: eth-us-east1.nanopool.org:9999
+    ethminer_stratum_failover: eth-us-west1.nanopool.org:9999
+    ethminer_worker_email: ethminer.worker@example.com
+    ethminer_default_wallet: "0x0.{{ ansible_hostname }}/{{ ethminer_worker_email }}"
+    ethminer_service_state: disabled
+
+  pre_tasks:
+    - name: Install prerequisits
+      package:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - lm-sensors
+        - cpufrequtils
+        - tmux
+      tags: [ 'task::pre' ]
+
+  roles:
+    - role: ethminer
+      tags: [ 'role::ethminer' ]

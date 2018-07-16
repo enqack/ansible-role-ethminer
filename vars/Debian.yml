@@ -1,0 +1,14 @@
+---
+# vars file for ethminer
+
+ethminer_archive_mirror: https://github.com/ethereum-mining/ethminer/releases/download
+
+ethminer_install_path: /usr/local
+
+ethminer_release_service_file_map:
+  'trusty':  [ 'ethminerd.conf' ]
+  'xenial':  [ 'ethminerd@.service' ]  
+
+ethminer_release_init_path_map:
+  'trusty':  [ '/etc/init' ]
+  'xenial':  [ '/etc/systemd/system' ]
